@@ -17,7 +17,13 @@ app.delete("/admin/deleteUser", (req, res) => {
 });
 
 app.get("/user", userAuth, (req, res) => {
-  res.send("User details!");
+  console.log("user");
+  res.send("User details");
+});
+
+//keep at the end, it catches if anything goes wrong which is not handled above
+app.use("/", (err, req, res, next) => {
+  res.status(500).send("Something went wrong!" + err);
 });
 
 app.listen("3000", () => {
