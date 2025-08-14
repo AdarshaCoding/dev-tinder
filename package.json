@@ -4,13 +4,14 @@
   "description": "tinders for devs",
   "main": "index.js",
   "scripts": {
-    "start":" nodemon src/app.js",
-    "dev":"nodemon src/app.js",
+    "start": " nodemon src/app.js",
+    "dev": "nodemon src/app.js",
     "test": "jest"
   },
   "author": "Adarsha",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mongoose": "^8.17.1"
   }
 }
