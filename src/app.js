@@ -1,33 +1,103 @@
 const express = require("express");
+const cors = require("cors");
 const connectDB = require("./config/database");
 const User = require("./model/user");
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.post("/signup", async (req, res) => {
-  const userObj = {
-    firstName: "Adarsha",
-    lastName: "PC",
-    emailId: "adarsha@gmail.com",
-    password: "123",
-    age: 32,
-    gender: "male",
-  };
+  const { firstName, lastName, emailId, password, age, gender } = req.body;
+  if (!firstName || !lastName || !emailId || !password || !age || !gender) {
+    return res.status(400).json({
+      success: false,
+      message: "Please provide all user details.",
+    });
+  }
   try {
-    const userInstance = new User(userObj);
-    const savedUser = await userInstance.save();
-    res.status(200).send(savedUser);
+    //user instance
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password,
+      age,
+      gender,
+    });
+    const savedUser = await user.save();
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: savedUser,
+    }); // created
   } catch (err) {
-    res.status(500).send("Something went wrong: " + err.message);
+    console.error("Error creating user:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
+app.get("/user", async (req, res) => {
+  const { emailId } = req.query;
+  if (!emailId) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email ID is required" });
+  }
+  try {
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found", data: {} });
+    }
+    res.json({
+      success: true,
+      message: "User fetched successfully",
+      data: user,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error", data: {} });
+  }
+});
+
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await User.find({}).lean();
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Users not found",
+        data: [],
+      });
+    } else {
+      res.json({
+        success: true,
+        message: "Users fetched successfully",
+        data: users,
+      });
+    }
+  } catch (err) {
+    console.log("Error fetching users:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      data: [],
+    });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
 connectDB()
   .then(() => {
     console.log("Database connected successfully!!");
-    app.listen("3000", () => {
-      console.log("Sever successfully listening at Port#: 3000");
+    app.listen(PORT, () => {
+      console.log("Sever successfully listening at Port#:", PORT);
     });
   })
   .catch((err) => {
