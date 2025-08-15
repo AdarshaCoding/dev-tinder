@@ -92,6 +92,27 @@ app.get("/feed", async (req, res) => {
   }
 });
 
+app.delete("/user/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User id not found" });
+    }
+    await User.deleteOne({ _id: id });
+    res.json({
+      success: true,
+      message: "User deleted successfully",
+      data: { user }, // check if client doesn't need full details else send only deleted id
+    });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 connectDB()
   .then(() => {
