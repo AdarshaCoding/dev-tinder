@@ -113,6 +113,30 @@ app.delete("/user/:id", async (req, res) => {
   }
 });
 
+app.patch("/user/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    Object.assign(user, req.body);
+    const updatedUser = await user.save();
+    res.json({
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 connectDB()
   .then(() => {
