@@ -5,7 +5,7 @@ const User = require("./model/user");
 const app = express();
 app.use(express.json());
 
-app.post("/user", async (req, res) => {
+app.post("/signup", async (req, res) => {
   const userObj = {
     firstName: "Adarsha",
     lastName: "PC",
