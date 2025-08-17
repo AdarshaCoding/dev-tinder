@@ -2,28 +2,25 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
 const User = require("./model/user");
-
+const { validateSignUpData, validateLoginData } = require("./utils/validation");
+const bcrypt = require("bcrypt");
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 app.post("/signup", async (req, res) => {
-  const { firstName, lastName, emailId, password, age, gender } = req.body;
-  if (!firstName || !lastName || !emailId || !password || !age || !gender) {
-    return res.status(400).json({
-      success: false,
-      message: "Please provide all user details.",
-    });
-  }
+  const { firstName, lastName, emailId, password } = req.body;
   try {
-    //user instance
+    // validate all inputs
+    validateSignUpData(req);
+
+    //password hasing
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = new User({
       firstName,
       lastName,
       emailId,
-      password,
-      age,
-      gender,
+      password: passwordHash,
     });
     const savedUser = await user.save();
     res.status(201).json({
@@ -33,10 +30,50 @@ app.post("/signup", async (req, res) => {
     }); // created
   } catch (err) {
     console.error("Error creating user:", err);
-    res.status(500).json({
+    if (err?.code === 11000 && err?.keyValue?.emailId) {
+      return res.status(400).json({
+        success: false,
+        message: `Email ${err.keyValue.emailId} is already registered.`,
+      });
+    }
+    // Handle Mongoose validation errors
+    if (err.name === "ValidationError") {
+      // Get the first validation error message
+      const errors = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({
+        success: false,
+        message: errors.join(", "),
+      });
+    }
+    return res.status(400).json({
       success: false,
-      message: "Internal server error",
+      message: err.message,
     });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { emailId, password } = req.body;
+
+  try {
+    validateLoginData(emailId);
+    const user = await User.findOne({ emailId });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Invalid credentials" });
+    }
+    const isValidCredentials = await bcrypt.compare(password, user?.password);
+
+    if (!isValidCredentials) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid credentials" });
+    } else {
+      res.json({ success: true, message: "Login Successful!" });
+    }
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
   }
 });
 
@@ -115,7 +152,31 @@ app.delete("/user/:id", async (req, res) => {
 
 app.patch("/user/:id", async (req, res) => {
   const { id } = req.params;
+  const data = req.body;
+
+  const ALLOWED_UPDATES = [
+    "about",
+    "skills",
+    "age",
+    "gender",
+    "photoUrl",
+    "password",
+    "firstName",
+    "lastName",
+  ];
+
   try {
+    const isUpdateAllowed = Object.keys(data).every((key) =>
+      ALLOWED_UPDATES.includes(key)
+    );
+
+    if (!isUpdateAllowed) {
+      return res.status(400).json({
+        success: false,
+        message: "Update request cannot be processed",
+      });
+    }
+
     const user = await User.findById(id);
     if (!user) {
       return res
@@ -130,9 +191,10 @@ app.patch("/user/:id", async (req, res) => {
       data: updatedUser,
     });
   } catch (err) {
+    console.error("Erro updating user:", err);
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: err.message,
     });
   }
 });
