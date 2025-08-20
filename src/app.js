@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const { userAuth } = require("./middlewares/auth");
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
 
 const app = express();
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use(cookieParser());
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
+app.use("/", requestRouter);
 
 app.get("/feed", async (req, res) => {
   try {
@@ -34,14 +36,6 @@ app.get("/feed", async (req, res) => {
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
-});
-
-app.post("/sendConnectionRequest", userAuth, (req, res) => {
-  const user = req.user;
-  res.json({
-    success: true,
-    message: `${user.firstName} sent connection request`,
-  });
 });
 
 const PORT = process.env.PORT || 3000;
