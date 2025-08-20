@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
-const User = require("./model/user");
+const User = require("./models/user");
 const { validateSignUpData, validateLoginData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
@@ -77,9 +77,12 @@ app.post("/login", async (req, res) => {
     } else {
       let token = await jwt.sign(
         { _id: user._id },
-        process.env.JWT_PRIVATE_KEY
+        process.env.JWT_PRIVATE_KEY,
+        { expiresIn: "1h" }
       );
-      res.cookie("token", token);
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 1 * 3600000),
+      });
       res.json({
         success: true,
         message: `${user.firstName} - Login Successful!`,
