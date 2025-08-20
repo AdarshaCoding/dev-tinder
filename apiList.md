@@ -13,7 +13,12 @@
 ## profileRouter
 
     GET /profile/view
+        - to view the profile, user must be logged In
     PATCH /profile/edit
+        - pass the required edit fields through req.body
+        - check all the fields are allowed to update
+        - read the user from req.user as it was attached in userAuth
+        - update each fields and save the updated user details to DB
     PATCH /profile/password
 
 ## requestRouter
