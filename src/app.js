@@ -123,6 +123,14 @@ app.get("/feed", async (req, res) => {
   }
 });
 
+app.post("/sendConnectionRequest", userAuth, (req, res) => {
+  const user = req.user;
+  res.json({
+    success: true,
+    message: `${user.firstName} sent connection request`,
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 connectDB()
   .then(() => {
