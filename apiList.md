@@ -20,6 +20,11 @@
         - read the user from req.user as it was attached in userAuth
         - update each fields and save the updated user details to DB
     PATCH /profile/password
+        - accept current and new password
+        - validate the current password using schema method for the loggedIn user (get it from req.user as it was authenticated by userAuth)
+        - check if the new password is strong enough to use using validator library
+        - encrypt the new password using bcrypt and update it for loggedInUser.password and save it.
+        - TODO: handle forgot password API
 
 ## requestRouter
 
