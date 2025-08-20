@@ -6,6 +6,7 @@ const { validateSignUpData, validateLoginData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 
 const app = express();
 app.use(express.json());
@@ -89,12 +90,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const { token } = req.cookies;
-    const decodedData = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
-    const { _id } = decodedData;
-    const user = await User.findById(_id);
+    const user = req.user;
     res.json({
       success: true,
       message: "User details fetched successfully",
