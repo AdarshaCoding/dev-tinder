@@ -1,12 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
-const User = require("./models/user");
 const cookieParser = require("cookie-parser");
-const { userAuth } = require("./middlewares/auth");
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const requestRouter = require("./routes/request");
+const userRouter = require("./routes/user");
 
 const app = express();
 app.use(express.json());
@@ -16,27 +15,7 @@ app.use(cookieParser());
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
-
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({}).lean();
-    if (users.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Users not found",
-        data: [],
-      });
-    } else {
-      res.json({
-        success: true,
-        message: "Users fetched successfully",
-        data: users,
-      });
-    }
-  } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-});
+app.use("/", userRouter);
 
 const PORT = process.env.PORT || 3000;
 connectDB()

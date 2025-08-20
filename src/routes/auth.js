@@ -26,7 +26,6 @@ authRouter.post("/signup", async (req, res) => {
       data: savedUser,
     });
   } catch (err) {
-    console.error("Error creating user:", err);
     if (err?.code === 11000 && err?.keyValue?.emailId) {
       return res.status(400).json({
         success: false,
