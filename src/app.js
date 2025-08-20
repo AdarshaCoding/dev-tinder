@@ -4,9 +4,14 @@ const connectDB = require("./config/database");
 const User = require("./model/user");
 const { validateSignUpData, validateLoginData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
+
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
   const { firstName, lastName, emailId, password } = req.body;
@@ -70,36 +75,31 @@ app.post("/login", async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid credentials" });
     } else {
-      res.json({ success: true, message: "Login Successful!" });
+      let token = await jwt.sign(
+        { _id: user._id },
+        process.env.JWT_PRIVATE_KEY
+      );
+      res.cookie("token", token);
+      res.json({
+        success: true,
+        message: `${user.firstName} - Login Successful!`,
+      });
     }
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
 });
 
-app.get("/user", async (req, res) => {
-  const { emailId } = req.query;
-  if (!emailId) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email ID is required" });
-  }
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const user = await User.findOne({ emailId: emailId });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found", data: {} });
-    }
+    const user = req.user;
     res.json({
       success: true,
-      message: "User fetched successfully",
+      message: "User details fetched successfully",
       data: user,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ success: false, message: "Internal server error", data: {} });
+    res.status(400).json({ success: false, message: err.message });
   }
 });
 
@@ -120,82 +120,7 @@ app.get("/feed", async (req, res) => {
       });
     }
   } catch (err) {
-    console.log("Error fetching users:", err);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      data: [],
-    });
-  }
-});
-
-app.delete("/user/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const user = await User.findById(id);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User id not found" });
-    }
-    await User.deleteOne({ _id: id });
-    res.json({
-      success: true,
-      message: "User deleted successfully",
-      data: { user }, // check if client doesn't need full details else send only deleted id
-    });
-  } catch (err) {
-    console.error("Error deleting user:", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-app.patch("/user/:id", async (req, res) => {
-  const { id } = req.params;
-  const data = req.body;
-
-  const ALLOWED_UPDATES = [
-    "about",
-    "skills",
-    "age",
-    "gender",
-    "photoUrl",
-    "password",
-    "firstName",
-    "lastName",
-  ];
-
-  try {
-    const isUpdateAllowed = Object.keys(data).every((key) =>
-      ALLOWED_UPDATES.includes(key)
-    );
-
-    if (!isUpdateAllowed) {
-      return res.status(400).json({
-        success: false,
-        message: "Update request cannot be processed",
-      });
-    }
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-    Object.assign(user, req.body);
-    const updatedUser = await user.save();
-    res.json({
-      success: true,
-      message: "User updated successfully",
-      data: updatedUser,
-    });
-  } catch (err) {
-    console.error("Erro updating user:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(400).json({ success: false, message: err.message });
   }
 });
 
