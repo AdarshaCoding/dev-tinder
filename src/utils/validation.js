@@ -22,6 +22,11 @@ const validateLoginData = (emailId) => {
   }
 };
 
+const validatePassword = (password) => {
+  if (!validator.isStrongPassword(password)) {
+    throw new Error("Enter the strong password");
+  }
+};
 const validateProfileEditData = (req) => {
   const allowedEditFields = [
     "age",
@@ -41,4 +46,5 @@ module.exports = {
   validateSignUpData,
   validateLoginData,
   validateProfileEditData,
+  validatePassword,
 };

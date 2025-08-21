@@ -1,6 +1,10 @@
 const express = require("express");
 const { userAuth } = require("../middlewares/auth");
-const { validateProfileEditData } = require("../utils/validation");
+const {
+  validateProfileEditData,
+  validatePassword,
+} = require("../utils/validation");
+const bcrypt = require("bcrypt");
 
 const profileRouter = express.Router();
 
@@ -30,6 +34,28 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
       message: "User data updated successfully",
       data: loggedInUser,
     });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+profileRouter.patch("/profile/password", userAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const loggedInUser = req.user;
+    const isCurrentPassowrdValid = await loggedInUser.verifyPassword(
+      currentPassword
+    );
+    if (!isCurrentPassowrdValid) {
+      throw new Error("Current Password is wrong");
+    }
+
+    validatePassword(newPassword);
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    loggedInUser.password = newPasswordHash;
+    await loggedInUser.save();
+    res.json({ success: true, message: "Password updated successfully" });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
